@@ -9,6 +9,42 @@ public class ShopManager : MonoBehaviour
     public GameObject itemPrefab; // 아이템 UI 프리팹
     private List<ShopItem> currentItems = new List<ShopItem>();
 
+    //
+    public static ShopManager instance;
+    public GameObject tooltipPanel;
+    public Text tooltipText;
+
+    void Awake()
+    {
+        // 싱글톤 패턴 적용
+        if (instance == null)
+        {
+            instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+
+        tooltipPanel = GameObject.Find("Canvas/ItemTooltip"); // 부모 오브젝트가 Canvas라면 경로를 명확히 지정
+        if (tooltipPanel == null)
+        {
+            tooltipPanel = FindObjectOfType<Canvas>().transform.Find("ItemTooltip")?.gameObject;
+        }
+
+        if (tooltipPanel == null)
+        {
+            Debug.LogError(" tooltipPanel을 찾을 수 없습니다! Hierarchy에서 정확한 이름을 확인하세요.");
+        }
+
+        else
+        {
+            tooltipPanel.SetActive(false); // 시작 시 비활성화
+        }
+    }
+
+    //
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -47,6 +83,10 @@ public class ShopManager : MonoBehaviour
             newItem.transform.Find("ItemName").GetComponent<Text>().text = shuffledItems[i].itemName;
             newItem.transform.Find("ItemPrice").GetComponent<Text>().text = shuffledItems[i].price.ToString();
             newItem.transform.Find("ItemIcon").GetComponent<Image>().sprite = shuffledItems[i].itemIcon;
+
+            // ShopItemUI 연결
+            ShopItemUI itemUI = newItem.AddComponent<ShopItemUI>();
+            itemUI.itemData = shuffledItems[i];
         }
     }
 }
