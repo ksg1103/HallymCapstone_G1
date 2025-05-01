@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using System.Collections;
+using System.Collections.Generic;
 
 public class ShopItemUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
@@ -8,12 +10,25 @@ public class ShopItemUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandl
     private GameObject tooltipPanel;
     private Text tooltipText;
     //
+    private Image tooltipImage;
+    //
+    private Text tooltipName;
+    //
     private RectTransform tooltipRect;
     private RectTransform canvasRect;
     //
-    public GameObject Inventory;
-    
+    private Text tooltipAttackAt;
     //
+    public GameObject Inventory; //인벤 창
+
+    //
+    private Transform tooltipPart;
+    private Dictionary<EquipType, string> equipTypeToTextName;
+    //
+    private bool isPointerOverTooltip = false;
+    private bool isPointerOverItem = false;
+    //
+
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -42,6 +57,50 @@ public class ShopItemUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandl
             Debug.LogError(" TooltipText를 찾을 수 없습니다! 오브젝트 계층 구조를 확인하세요.");
             return;
         }
+        //
+        tooltipImage = tooltipPanel.transform.Find("TooltipImage")?.GetComponent<Image>();
+
+        if (tooltipImage == null)
+        {
+            Debug.LogError(" tooltipImage 찾을 수 없습니다! 오브젝트 계층 구조를 확인하세요.");
+            return;
+        }
+        //
+
+        ////    아이템 이름 관련
+        tooltipName = tooltipPanel.transform.Find("TooltipName")?.GetComponent<Text>();
+
+        if (tooltipName == null)
+        {
+            Debug.LogError(" tooltipName 찾을 수 없습니다! 오브젝트 계층 구조를 확인하세요.");
+            return;
+        }
+        ///
+
+        ////    아이템 속성 공격력 관련
+        tooltipAttackAt = tooltipPanel.transform.Find("TooltipAttackAt")?.GetComponent<Text>();
+
+        if (tooltipAttackAt == null)
+        {
+            Debug.LogError(" tooltipAttackAt 찾을 수 없습니다! 오브젝트 계층 구조를 확인하세요.");
+            return;
+        }
+        ///
+
+        ///     아이템 장비 부위 관련
+        tooltipPart = tooltipPanel.transform.Find("TooltipPart");
+        equipTypeToTextName = new Dictionary<EquipType, string>
+        {
+            { EquipType.Head, "HeadText" },
+            { EquipType.Top, "TopText" },
+            { EquipType.Bottom, "BottomText" },
+            { EquipType.Gloves, "GlovesText" },
+            { EquipType.Shoes, "ShoesText" },
+            { EquipType.Weapon, "WeaponText" },
+            { EquipType.Accessory, "AccessoryText" },
+            { EquipType.Special, "SpecialText" }
+        };
+
 
         //
         // Canvas의 RectTransform 찾기
@@ -50,29 +109,45 @@ public class ShopItemUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandl
 
         // 시작할 때 툴팁 숨기기
         tooltipPanel.SetActive(false);
+
+
+
+        //
+        //AddTooltipEventTriggers();
+        //
+
     }
 
     // 마우스를 올렸을 때
     public void OnPointerEnter(PointerEventData eventData)
     {
-        if (tooltipPanel == null || tooltipText == null) return; // 예외 방지
+        //
+        isPointerOverItem = true;
+        //
+
+
+
+        if (tooltipPanel == null || tooltipText == null || tooltipImage == null || tooltipName == null) return; // 예외 방지
 
         tooltipPanel.SetActive(true); // 툴팁 보이기
-        tooltipText.text = $"{itemData.itemName}\n가격: {itemData.price}\n{GetItemDescription()}";
+        tooltipText.text = $"{GetItemDescription()}";
+        tooltipName.text = $"{itemData.itemName}";
+        tooltipAttackAt.text = $"Bleeding: {itemData.bleeding}   Curse: {itemData.curse}   Burn: {itemData.burn}\n" +
+                                $"Blind: {itemData.blind}   Holy: {itemData.holy}";
+        
 
-        //
+
+        tooltipImage.sprite = itemData.itemIcon;
+        tooltipPanel.transform.SetAsLastSibling();
+        // 장비 ui색깔 변경 함수 호출
+        HighlightEquipPart(itemData.equipType);
         UpdateTooltipPosition(eventData);
-        //
-
-        // 툴팁 위치 조정 (마우스 따라가기)
-        //tooltipPanel.transform.position = Input.mousePosition;
     }
 
     // 마우스를 뗐을 때
     public void OnPointerExit(PointerEventData eventData)
     {
-        if (tooltipPanel == null) return; // 예외 방지
-        tooltipPanel.SetActive(false); // 툴팁 숨기기
+        isPointerOverItem = false;
     }
 
     private void UpdateTooltipPosition(PointerEventData eventData)
@@ -126,25 +201,70 @@ public class ShopItemUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandl
     {
         switch (itemData.itemName)
         {
-            case "qwer":
-                return "체력을 회복하는 아이템입니다.";
-            case "aaa":
-                return "공격력을 증가시킵니다.";
-            case "abc":
-                return "방어력을 증가시킵니다.";
+            case "역병의사 마스크":
+                return "흑사병이 돌던 시절, 사람들을 살리려 노력하던 사람들의 흔적입니다.";
+            case "역병의사 신발":
+                return "흑사병이 돌던 시절, 사람들을 살리려 노력하던 사람들의 흔적입니다.";
+            case "역병의사 의상":
+                return "흑사병이 돌던 시절, 사람들을 살리려 노력하던 사람들의 흔적입니다.";
+            case "역병의사 장갑":
+                return "흑사병이 돌던 시절, 사람들을 살리려 노력하던 사람들의 흔적입니다.";
+            case "역병의사 벨트":
+                return "흑사병이 돌던 시절, 사람들을 살리려 노력하던 사람들의 흔적입니다.";
+            case "홀스터":
+                return "권총을 집어넣을수 있는 홀스터 입니다.";
+            case "벤돌리어":
+                return "이름 없는 병사의 탄주머니입니다.";
+            case "Dear Boss":
+                return "전설적인 살인마, 잭 더 리퍼가 사회에 자신을 소개하던 편지입니다.";
+            case "From Hell":
+                return "전설적인 살인마, 잭더 리퍼가 사회에 보내는 2번째 편지입니다.";
+
             default:
                 return "이 아이템에 대한 설명이 없습니다.";
         }
     }
 
-    public void OnButtonClicked()
+    public void OnInventoryButtonClicked()
     {
         Inventory.SetActive(!Inventory.activeSelf);
         
+
     }
+
+
+    // 장비 부위 ui색깔 변화
+    private void HighlightEquipPart(EquipType type)
+    {
+        if (tooltipPart == null) return;
+
+        foreach (var kvp in equipTypeToTextName)
+        {
+            Transform partTextTransform = tooltipPart.Find(kvp.Value);
+            if (partTextTransform != null)
+            {
+                Text text = partTextTransform.GetComponent<Text>();
+                if (text != null)
+                {
+                    text.color = (kvp.Key == type) ? Color.white : Color.gray;
+                }
+            }
+        }
+    }
+
+
+
+
     // Update is called once per frame
     void Update()
     {
-        
+        if (tooltipPanel != null && tooltipPanel.activeSelf)        // 툴팁이 존재하고 보이는 상태일 때 작동
+        {
+            if (!RectTransformUtility.RectangleContainsScreenPoint(GetComponent<RectTransform>(), Input.mousePosition) &&               //RectTransformUtility.RectangleContainsScreenPoint : 마우스가 해당 영역 UI에 있는지
+                !RectTransformUtility.RectangleContainsScreenPoint(tooltipRect, Input.mousePosition))                                   // 즉 첫번째 줄은 마우스 올린 상점아이템 자체, 두번째는 툴팁 UI영역
+            {
+                tooltipPanel.SetActive(false);
+            }
+        }
     }
 }

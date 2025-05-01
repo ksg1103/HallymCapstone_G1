@@ -3,20 +3,7 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 3
-  tags:
-  - Enemymob
-  - BossMob
-  - Bullet
-  - Equipment
-  - Head_Equip
-  - Top_Equip
-  - Gloves_Equip
-  - Bottom_Equip
-  - Shoes_Equip
-  - Accessory_Equip
-  - Weapon_Equip
-  - Special_Equip
-  - Weapon2_Equip
+  tags: []
   layers:
   - Default
   - TransparentFX
@@ -24,8 +11,8 @@ TagManager:
   - 
   - Water
   - UI
-  - itemtooltip
-  - equipment
+  - 
+  - 
   - 
   - 
   - 

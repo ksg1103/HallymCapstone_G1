@@ -1,90 +1,104 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using System.Collections.Generic;
 using UnityEngine.UI;
 
 public class BulletController : MonoBehaviour
 {
-    [Header("Bullet Settings")]
-    public List<GameObject> bulletPrefabs = new List<GameObject>(); // 직접 추가할 프리팹 리스트
-    public Transform spawnParent; // 생성 위치와 부모 오브젝트
-    public PlayerState player; // 플레이어 (삭제 함수 호출용)
+    public List<GameObject> bulletPrefabs = new List<GameObject>();
+    public Transform spawnParent;
+    public PlayerState player;
+    public GameObject enemy;
 
-    [Header("Spawn Settings")]
-    public float spawnInterval = 5f; // 몇 초마다 생성할지
-    public int maxChildren = 10; // 최대 자식 수 (인스펙터에서 조정)
+    private List<Button> activeBulletButtons = new List<Button>();
+    private const int maxBulletCount = 12;
 
-    private bool isSpawning = true; // 현재 생성 중인지 여부
-
-    void Start()
+    public void SpawnBullets(int count)
     {
-        // 자동으로 생성 코루틴 시작
-        StartCoroutine(SpawnBulletRoutine());
-    }
+        int currentCount = spawnParent.childCount;
+        int canSpawn = Mathf.Clamp(maxBulletCount - currentCount, 0, count);
 
-    // 일정 시간마다 총알(버튼) 생성 루틴
-    IEnumerator SpawnBulletRoutine()
-    {
-        while (true)
+        for (int i = 0; i < canSpawn; i++)
         {
-            int childCount = spawnParent.childCount;
-
-            if (childCount >= maxChildren)
-            {
-                if (isSpawning)
-                {
-                    isSpawning = false;
-                    Debug.Log("최대 개수 도달. 총알(버튼) 생성 멈춤.");
-                }
-            }
-            else
-            {
-                if (!isSpawning)
-                {
-                    isSpawning = true;
-                    Debug.Log("총알(버튼) 개수 줄어듦. 생성 재개.");
-                }
-
-                if (isSpawning)
-                {
-                    SpawnRandomBullet();
-                }
-            }
-
-            yield return new WaitForSeconds(spawnInterval);
+            SpawnSingleBullet();
         }
+
+        Debug.Log($"[BulletController] 현재 총알 수: {currentCount}, 생성된 총알: {canSpawn}");
     }
 
-    // 랜덤으로 총알(버튼) 생성
-    void SpawnRandomBullet()
+    void SpawnSingleBullet()
     {
-        if (bulletPrefabs.Count == 0)
+        if (bulletPrefabs.Count == 0 || player == null || enemy == null)
         {
-            Debug.LogWarning("추가된 총알(버튼) 프리팹이 없습니다!");
+            Debug.LogWarning("총알 프리팹 혹은 플레이어/적이 설정되지 않음");
             return;
         }
 
-        int randomIndex = Random.Range(0, bulletPrefabs.Count);
-        GameObject selectedBullet = bulletPrefabs[randomIndex];
+        int index = Random.Range(0, bulletPrefabs.Count);
+        GameObject bullet = Instantiate(
+            bulletPrefabs[index],
+            spawnParent.position,
+            Quaternion.identity,
+            spawnParent
+        );
 
-        // 버튼(총알) 생성
-        GameObject spawnedBullet = Instantiate(selectedBullet, spawnParent.position, Quaternion.identity, spawnParent);
-
-        // 버튼 컴포넌트 가져오기
-        Button buttonComponent = spawnedBullet.GetComponent<Button>();
-        if (buttonComponent != null)
+        Button button = bullet.GetComponent<Button>();
+        if (button != null)
         {
-            // 버튼 클릭 시 PlayerState의 Attack 호출
-            buttonComponent.onClick.AddListener(() =>
+            activeBulletButtons.Add(button);
+        }
+
+        // 버튼 클릭 동작은 BulletButton.cs가 처리
+    }
+
+    public void SetBulletButtonsInteractable(bool interactable)
+    {
+        foreach (var button in activeBulletButtons)
+        {
+            if (button != null)
+                button.interactable = interactable;
+        }
+    }
+
+    public void RegisterSelectedBullets()
+    {
+        Dictionary<BulletType, int> bulletCounts = new Dictionary<BulletType, int>();
+        Dictionary<BulletType, GameObject> targetByType = new Dictionary<BulletType, GameObject>();
+
+        foreach (Transform bullet in spawnParent)
+        {
+            BulletButton bulletButton = bullet.GetComponent<BulletButton>();
+            if (bulletButton != null && bulletButton.IsSelected())
             {
-                player.Attack(spawnedBullet); // 플레이어가 해당 버튼(총알) 삭제
-            });
-        }
-        else
-        {
-            Debug.LogWarning($"생성된 오브젝트 {selectedBullet.name} 에 Button 컴포넌트가 없습니다.");
+                BulletType type = bulletButton.GetBulletType();
+
+                if (!bulletCounts.ContainsKey(type))
+                    bulletCounts[type] = 0;
+
+                bulletCounts[type]++;
+                targetByType[type] = bulletButton.GetTarget();
+
+                Destroy(bullet.gameObject); // 선택된 총알 삭제
+            }
         }
 
-        Debug.Log($"{selectedBullet.name} 생성 및 삭제 연결 (현재 {spawnParent.childCount}개)");
+        foreach (var entry in bulletCounts)
+        {
+            BulletType type = entry.Key;
+            int count = entry.Value;
+            GameObject target = targetByType[type];
+
+            TurnManager.Instance.SubmitGroupedPlayerAction(target, type, count);
+        }
+    }
+
+
+    public void ClearAllBullets()
+    {
+        foreach (Transform child in spawnParent)
+        {
+            Destroy(child.gameObject);
+        }
+
+        activeBulletButtons.Clear();
     }
 }
