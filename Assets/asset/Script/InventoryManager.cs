@@ -20,7 +20,35 @@ public class InventoryManager : MonoBehaviour
     //private ShopManager shopManager;
 
     public Dictionary<string, ShopItem> equippedItems = new Dictionary<string, ShopItem>(); //string으로 장비 슬롯의 유형 판단하려고
-    
+    public bool hasHolsterEquipped; //홀스터 장착 되었는지
+    public bool hasBandollerEquipped;
+
+    public Text statSummaryText;
+    // 재환 ui테스트
+    public (int holy, int burn, int bleeding, int blind, int curse, int bang, int bullet) GetTotalStats()
+    {
+        int totalHoly = 0, totalBurn = 0, totalBleeding = 0, totalBlind = 0, totalCurse = 0, totalBang = 0, totalBullet = 0;
+
+        foreach (var item in playerInventory.currentPlayerItems)
+        {
+            if (item != null && item.id != -1)
+            {
+                totalHoly += item.holy;
+                totalBurn += item.burn;
+                totalBleeding += item.bleeding;
+                totalBlind += item.blind;
+                totalCurse += item.curse;
+                totalBang += item.bang;
+                totalBullet += item.bullet;
+            }
+
+        }
+
+        return (totalHoly, totalBurn, totalBleeding, totalBlind, totalCurse, totalBang, totalBullet);
+    }
+    //
+
+
     void Awake()
     {   
         if (InventoryInstance == null)
@@ -34,7 +62,7 @@ public class InventoryManager : MonoBehaviour
         {
             Destroy(gameObject);
         }
-        itemManyLimit = 6;
+        itemManyLimit = 32;
         howMany = 0;
         ItemFull = false;
         
@@ -66,8 +94,9 @@ public class InventoryManager : MonoBehaviour
         }
 
         Debug.Log("[InventoryManager] 연결된 playerInventory 오브젝트 이름: " + playerInventory.gameObject.name);
-        howMany++;
-        if(howMany >= itemManyLimit)
+        //howMany++;
+        RecalculateInventoryCount();
+        if (howMany >= itemManyLimit)
         {
             Debug.LogWarning("인벤토리 창이 가득 찼읍니다."); //이렇게만 하면 인벤토리 매니저 상에만 업데이트 안됨. UI쪽은 똑같이 사라짐
             ItemFull = true; 
@@ -87,44 +116,81 @@ public class InventoryManager : MonoBehaviour
 
     public void EquipItem(ShopItem item) //인벤토리 창에서 장비창으로
     {
+        Debug.Log($"[EquipItem] 요청된 아이템: {item.itemName}, ID: {item.id}");
         if (!playerInventory.currentPlayerItems.Contains(item))
         {
+            Debug.Log($"[EquipItem] {item.itemName} 은 아직 장착되어 있지 않음. 장착 시도 시작");
             item.IfEquip = 2;
+            if (item.itemName == "머스킷")
+            {
+
+            }
             playerInventory.currentPlayerItems.Add(item); //장비 리스트에 넣고
             playerInventory.playerItems.Remove(item); //인벤토리 리스트에서 지우고 
             Debug.Log($"장착됨: {item.itemName}");
-            howMany--;
-            if (item.equipType == EquipType.Special)
-            {
+            //howMany--;
+            RecalculateInventoryCount();
+            if (item.id == 8) //홀스터 관련 장비창 하나 더 보이게
+            {   //item id 18번이 머스킷
                 Debug.Log("[Special] 슬롯들을 다시 활성화합니다.");
                 ShopManager shop = ShopManager.instance;
                 shop.Weapone2Eqip.SetActive(true);
-
-
+                hasHolsterEquipped = true;
+                if (item.id == 8)
+                {
+                    Debug.Log("id 8인 홀스터입니다.");
+                   
+                }
+                if (item.id == 10)
+                {
+                    Debug.Log("id 10인 밴돌리어입니다.");
+                    hasBandollerEquipped = true;
+                }
+                
             }
-        }
-    }
+            if (item.id == 10) //밴돌리어 장착시
+            {
+                hasBandollerEquipped = true;
+                ShopManager shop = ShopManager.instance;
+                Image slotImage = shop.WeaponEqip.GetComponent<Image>();
 
+                if (slotImage != null)
+                {
+                    slotImage.color = Color.green; // 예: 흰색으로 변경 (원하는 색으로 수정 가능)
+                }
+            }
+            
+        }
+        FindObjectOfType<StatUIHandler>()?.UpdateStatUI();
+    }
+    /*
     public void UnequipItem(ShopItem item)
     {
         if (playerInventory.currentPlayerItems.Contains(item))
         {
+            
             item.IfEquip = 1;
             playerInventory.currentPlayerItems.Remove(item);
             playerInventory.playerItems.Add(item);
             Debug.Log($"해제됨: {item.itemName}");
-            howMany++;
-            if (item.equipType == EquipType.Special)
+            //howMany++;
+            RecalculateInventoryCount();
+            if (item.id == 8)//홀스터 해제 했을때
             {
+                hasHolsterEquipped = false;
                 Debug.Log("[Special] 슬롯들을 다시 비활성화합니다.");
                 ShopManager shop = ShopManager.instance;
+
+                
 
                 Transform weapon2Slot = shop.Weapone2Eqip.transform;
 
                 if (weapon2Slot.childCount > 0)
                 {
                     GameObject weaponItemObj = weapon2Slot.GetChild(0).gameObject;
+                    GameObject weaponItemObj2 = weaponItemObj; //
                     DragItem weaponDragItem = weaponItemObj.GetComponent<DragItem>();
+                    //DragItem weaponDragItem = weaponItemObj2.GetComponent<DragItem>();
 
                     if (weaponDragItem != null)
                     {
@@ -133,13 +199,15 @@ public class InventoryManager : MonoBehaviour
                         // 데이터 이동
                         playerInventory.currentPlayerItems.Remove(weaponItem);
                         playerInventory.playerItems.Add(weaponItem);
+                        Debug.Log($"[Unequip] {weaponItem.itemName} 인벤토리에 복원됨. 현재 인벤토리 수: {playerInventory.playerItems.Count}");
                         weaponItem.IfEquip = 1;
-                        howMany++;
-
+                        //howMany++;
+                        RecalculateInventoryCount();
                         Debug.Log($"[Special 연쇄 해제] Weapon2에 장착된 {weaponItem.itemName} 인벤토리로 이동");
 
                         // 빈 슬롯 찾아서 UI 복원
                         //  인벤토리 UI 슬롯 중 빈 곳 찾아서 아이템 배치
+                        
                         for (int i = 0; i < shop.slotCount; i++)
                         {
                             Transform invSlot = shop.slots[i].transform;
@@ -181,22 +249,262 @@ public class InventoryManager : MonoBehaviour
 
                                 //  ShopManager.items도 동기화 (중요!!)
                                 shop.items[i] = weaponItem;
-
+                                
                                 break;
                             }
                         }
 
 
-                        Destroy(weaponItemObj); // 기존 장비창의 UI 삭제
+                        // 기존 장비창의 UI 삭제
+                        //weaponItemObj.SetActive(false);
+                        Destroy(weaponItemObj);
+                        shop.items[42] = new ShopItem { id = -1 };
+                        
+                    }
+                }
+                
+                shop.Weapone2Eqip.SetActive(false);
+            }
+            if(item.id == 10)
+            {
+                hasBandollerEquipped = false;
+                ShopManager shop = ShopManager.instance;
+                Transform weaponSlot = shop.WeaponEqip.transform;
+                Image slotImage = shop.WeaponEqip.GetComponent<Image>();
+                if (slotImage != null)
+                {
+                    slotImage.color = Color.white;
+                    Debug.Log("WeaponEqip 색상 회색으로 변경");
+                }
+                else
+                {
+                    Debug.LogWarning("WeaponEqip에 Image 컴포넌트 없음");
+                }
+                if (weaponSlot.childCount > 0)
+                {
+                    GameObject weaponItemObj = weaponSlot.GetChild(0).gameObject;
+                    DragItem weaponDragItem = weaponItemObj.GetComponent<DragItem>();
+
+                    if (weaponDragItem != null && weaponDragItem.item.id == 18) // 머스킷이라면
+                    {
+                        ShopItem weaponItem = weaponDragItem.item;
+
+                        // 데이터 이동
+                        playerInventory.currentPlayerItems.Remove(weaponItem);
+                        playerInventory.playerItems.Add(weaponItem);
+                        weaponItem.IfEquip = 1;
+                        //howMany++;
+                        RecalculateInventoryCount();
+                        Debug.Log($"[밴돌리어 연쇄 해제] Weapon에 장착된 {weaponItem.itemName} 인벤토리로 이동");
+
+                        // 빈 슬롯 찾아서 UI 복원
+                        for (int i = 0; i < shop.slotCount; i++)
+                        {
+                            Transform invSlot = shop.slots[i].transform;
+                            if (invSlot.childCount == 0)
+                            {
+                                GameObject itemUI = GameObject.Instantiate(shop.inventoryItemPrefab, invSlot);
+                                itemUI.name = weaponItem.itemName;
+
+                                Transform iconTransform = itemUI.transform.Find("ItemIcon");
+                                if (iconTransform != null)
+                                {
+                                    Image iconImage = iconTransform.GetComponent<Image>();
+                                    if (iconImage != null && weaponItem.itemIcon != null)
+                                    {
+                                        iconImage.sprite = weaponItem.itemIcon;
+                                        iconImage.enabled = true;
+                                    }
+                                }
+
+                                DragItem newDrag = itemUI.GetComponent<DragItem>();
+                                if (newDrag != null)
+                                {
+                                    newDrag.item = weaponItem;
+                                    newDrag.slot = i;
+                                    CanvasGroup cg = itemUI.GetComponent<CanvasGroup>();
+                                    if (cg != null)
+                                        cg.blocksRaycasts = true;
+                                }
+
+                                InventoryItemUI uiScript = itemUI.GetComponent<InventoryItemUI>();
+                                if (uiScript != null)
+                                    uiScript.itemData = weaponItem;
+
+                                shop.items[i] = weaponItem;
+                                break;
+                            }
+                        }
+
+                        Destroy(weaponItemObj); // 기존 장비창 UI 삭제
+                        shop.items[shop.GetEquipSlotIndex(EquipType.Weapon)] = new ShopItem { id = -1 };
+                    }
+                }
+            }
+
+        }
+        FindObjectOfType<StatUIHandler>()?.UpdateStatUI();
+    }
+    */
+    public void UnequipItem(ShopItem item)
+    {
+        if (playerInventory.currentPlayerItems.Contains(item))
+        {
+            item.IfEquip = 1;
+            playerInventory.currentPlayerItems.Remove(item);
+            playerInventory.playerItems.Add(item);
+            Debug.Log($"해제됨: {item.itemName}");
+            RecalculateInventoryCount();
+
+            ShopManager shop = ShopManager.instance;
+
+            // 장비가 홀스터일 때: Weapon2Eqip 처리
+            if (item.id == 8)
+            {
+                hasHolsterEquipped = false;
+                Debug.Log("[Special] 슬롯들을 다시 비활성화합니다.");
+                Transform weapon2Slot = shop.Weapone2Eqip.transform;
+
+                if (weapon2Slot.childCount > 0)
+                {
+                    GameObject weaponItemObj = weapon2Slot.GetChild(0).gameObject;
+                    DragItem weaponDragItem = weaponItemObj.GetComponent<DragItem>();
+
+                    if (weaponDragItem != null)
+                    {
+                        ShopItem weaponItem = weaponDragItem.item;
+                        playerInventory.currentPlayerItems.Remove(weaponItem);
+                        playerInventory.playerItems.Add(weaponItem);
+                        weaponItem.IfEquip = 1;
+                        RecalculateInventoryCount();
+                        Debug.Log($"[Special 연쇄 해제] Weapon2에 장착된 {weaponItem.itemName} 인벤토리로 이동");
+
+                        bool foundSlot = false;
+                        for (int i = 0; i < shop.slotCount; i++)
+                        {
+                            if (shop.items[i].id == -1 && shop.slots[i].transform.childCount == 0)
+                            {
+                                GameObject itemUI = Instantiate(shop.inventoryItemPrefab, shop.slots[i].transform);
+                                itemUI.name = weaponItem.itemName;
+
+                                Image iconImage = itemUI.transform.Find("ItemIcon")?.GetComponent<Image>();
+                                if (iconImage != null && weaponItem.itemIcon != null)
+                                {
+                                    iconImage.sprite = weaponItem.itemIcon;
+                                    iconImage.enabled = true;
+                                }
+
+                                DragItem newDrag = itemUI.GetComponent<DragItem>();
+                                if (newDrag != null)
+                                {
+                                    newDrag.item = weaponItem;
+                                    newDrag.slot = i;
+                                    itemUI.GetComponent<CanvasGroup>().blocksRaycasts = true;
+                                }
+
+                                InventoryItemUI uiScript = itemUI.GetComponent<InventoryItemUI>();
+                                if (uiScript != null) uiScript.itemData = weaponItem;
+
+                                shop.items[i] = weaponItem;
+                                foundSlot = true;
+                                break;
+                            }
+                        }
+
+                        if (!foundSlot)
+                        {
+                            Debug.LogWarning("[UnequipItem] 인벤토리에 빈 슬롯이 없어 연쇄 해제된 무기를 추가할 수 없습니다.");
+                        }
+
+                        Destroy(weaponItemObj);
+                        int specialSlot = shop.GetEquipSlotIndex(EquipType.Special);
+                        shop.items[specialSlot] = new ShopItem { id = -1 };
                     }
                 }
 
                 shop.Weapone2Eqip.SetActive(false);
             }
 
+            // 장비가 밴돌리어일 때: WeaponEqip 처리
+            if (item.id == 10)
+            {
+                hasBandollerEquipped = false;
+
+                Transform weaponSlot = shop.WeaponEqip.transform;
+                Image slotImage = shop.WeaponEqip.GetComponent<Image>();
+                if (slotImage != null) slotImage.color = Color.white;
+
+                if (weaponSlot.childCount > 0)
+                {
+                    GameObject weaponItemObj = weaponSlot.GetChild(0).gameObject;
+                    DragItem weaponDragItem = weaponItemObj.GetComponent<DragItem>();
+
+                    if (weaponDragItem != null && weaponDragItem.item.id == 18)
+                    {
+                        ShopItem weaponItem = weaponDragItem.item;
+                        playerInventory.currentPlayerItems.Remove(weaponItem);
+                        playerInventory.playerItems.Add(weaponItem);
+                        weaponItem.IfEquip = 1;
+                        RecalculateInventoryCount();
+
+                        bool foundSlot = false;
+                        for (int i = 0; i < shop.slotCount; i++)
+                        {
+                            if (shop.items[i].id == -1 && shop.slots[i].transform.childCount == 0)
+                            {
+                                GameObject itemUI = Instantiate(shop.inventoryItemPrefab, shop.slots[i].transform);
+                                itemUI.name = weaponItem.itemName;
+
+                                Image iconImage = itemUI.transform.Find("ItemIcon")?.GetComponent<Image>();
+                                if (iconImage != null && weaponItem.itemIcon != null)
+                                {
+                                    iconImage.sprite = weaponItem.itemIcon;
+                                    iconImage.enabled = true;
+                                }
+
+                                DragItem newDrag = itemUI.GetComponent<DragItem>();
+                                if (newDrag != null)
+                                {
+                                    newDrag.item = weaponItem;
+                                    newDrag.slot = i;
+                                    itemUI.GetComponent<CanvasGroup>().blocksRaycasts = true;
+                                }
+
+                                InventoryItemUI uiScript = itemUI.GetComponent<InventoryItemUI>();
+                                if (uiScript != null) uiScript.itemData = weaponItem;
+
+                                shop.items[i] = weaponItem;
+                                foundSlot = true;
+                                break;
+                            }
+                        }
+
+                        if (!foundSlot)
+                        {
+                            Debug.LogWarning("[UnequipItem] 인벤토리에 빈 슬롯이 없어 연쇄 해제된 무기를 추가할 수 없습니다.");
+                        }
+
+                        Destroy(weaponItemObj);
+                        int weaponSlotIndex = shop.GetEquipSlotIndex(EquipType.Weapon);
+                        shop.items[weaponSlotIndex] = new ShopItem { id = -1 };
+                    }
+                }
+            }
+
+            // 디버그: 슬롯에 아이템이 겹쳐 있는지 검사
+            for (int i = 0; i < shop.slotCount; i++)
+            {
+                int count = shop.slots[i].transform.childCount;
+                if (count > 1)
+                {
+                    Debug.LogError($"[UI 충돌] 슬롯 {i}에 아이템이 {count}개 겹쳐 있습니다!");
+                }
+            }
         }
+
+        FindObjectOfType<StatUIHandler>()?.UpdateStatUI();
     }
-    
+
     public void RemoveItemFromInventory(int slotIndex)
     {
         GameObject popupInstance = Instantiate(PopupForSellPrefab, transform.root);
@@ -207,7 +515,19 @@ public class InventoryManager : MonoBehaviour
             Debug.Log($"[InventoryManager] 슬롯 {slotIndex} 아이템 제거됨");
         }
     }
+    public void RecalculateInventoryCount()
+    {
+        howMany = 0;
+        foreach (var item in playerInventory.playerItems)
+        {
+            if (item != null && item.id != -1)
+            {
+                howMany++;
+            }
+        }
 
+        ItemFull = howMany >= itemManyLimit;
+    }
     public void RequestRemoveItem(int slotIndex, GameObject targetItemObject)
     {   
         DragItem dragItem = targetItemObject.GetComponent<DragItem>();
@@ -216,7 +536,7 @@ public class InventoryManager : MonoBehaviour
         Debug.Log("삭제 확인 팝업 생성됨");
 
         ShopItem item = dragItem.item;
-
+        
         // 텍스트 설정
         Text messageText = popupInstance.transform.Find("Message").GetComponent<Text>();
         messageText.text = $"판매하시겠습니까?\n({(int)(item.price * 0.7)} Gold)";
@@ -233,13 +553,19 @@ public class InventoryManager : MonoBehaviour
 
                 if (item.IfEquip == 1)
                 {
+                    SoundManager.Instance.PlaySellSound();
                     Debug.Log($"{item.itemName}을 인벤토리에서 판매 확인");
 
-                    
-                    playerInventory.playerItems.Remove(item);
 
+                    //playerInventory.playerItems.Remove(item);
+                    int index = playerInventory.playerItems.IndexOf(item);
+                    if (index != -1)
+                    {
+                        playerInventory.playerItems[index] = new ShopItem { id = -1 };
+                    }
                     GameManager.instance.playerMoney += (int)(item.price * 0.7);
-                    howMany--;
+                    //howMany--;
+                    RecalculateInventoryCount();
                     /*
                     if (shopManager != null)
                     {
@@ -256,7 +582,8 @@ public class InventoryManager : MonoBehaviour
                     }
                 }
                 else if(item.IfEquip == 2) 
-                {
+                {   
+                    SoundManager.Instance.PlaySellSound();
                     Debug.Log($"{item.itemName}을 장비창에서 판매 확인");
                     playerInventory.currentPlayerItems.Remove(item);
 
@@ -282,6 +609,7 @@ public class InventoryManager : MonoBehaviour
                 // 구매한 아이템 상점에서 등장 안하게 하는 로직 삭제 x
 
                 Destroy(targetItemObject);
+                InventoryManager.InventoryInstance.RebuildInventoryUI(); //
                 Destroy(popupInstance);
                 ShopManager.instance.UpdatePlayerMoneyUI();
             }
@@ -322,8 +650,18 @@ public class InventoryManager : MonoBehaviour
                 GameObject itemUI = GameObject.Instantiate(ShopManager.instance.inventoryItemPrefab, ShopManager.instance.slots[i].transform);
                 itemUI.name = item.itemName;
 
-                Image icon = itemUI.GetComponent<Image>();
-                if (icon != null) icon.sprite = item.itemIcon;
+                /*Image icon = itemUI.GetComponent<Image>();
+                if (icon != null) icon.sprite = item.itemIcon;*/
+                Transform iconTransform = itemUI.transform.Find("ItemIcon");
+                if (iconTransform != null)
+                {
+                    Image iconImage = iconTransform.GetComponent<Image>();
+                    if (iconImage != null && item.itemIcon != null)
+                    {
+                        iconImage.sprite = item.itemIcon;
+                        iconImage.enabled = true;
+                    }
+                }
 
                 DragItem dragItem = itemUI.GetComponent<DragItem>();
                 if (dragItem != null)
@@ -337,6 +675,8 @@ public class InventoryManager : MonoBehaviour
                 {
                     uiScript.itemData = item;
                 }
+                
+                
             }
         }
 
@@ -364,8 +704,24 @@ public class InventoryManager : MonoBehaviour
                 GameObject itemUI = GameObject.Instantiate(ShopManager.instance.inventoryItemPrefab, ShopManager.instance.slots[slotIndex].transform);
                 itemUI.name = item.itemName;
 
-                Image icon = itemUI.GetComponent<Image>();
-                if (icon != null) icon.sprite = item.itemIcon;
+                /*Image icon = itemUI.GetComponent<Image>();
+                if (icon != null) icon.sprite = item.itemIcon;*/
+                Transform iconTransform = itemUI.transform.Find("ItemIcon");
+                if (iconTransform != null)
+                {
+                    Image iconImage = iconTransform.GetComponent<Image>();
+                    if (iconImage != null && item.itemIcon != null)
+                    {
+                        iconImage.sprite = item.itemIcon;
+                        iconImage.enabled = true;
+                        iconImage.preserveAspect = true; // 중요!
+
+                        // 사이즈 직접 고정 (선택)
+                        RectTransform iconRect = iconImage.GetComponent<RectTransform>();
+                        if (iconRect != null)
+                            iconRect.sizeDelta = new Vector2(15, 15);
+                    }
+                }
 
                 DragItem dragItem = itemUI.GetComponent<DragItem>();
                 if (dragItem != null)
@@ -381,74 +737,11 @@ public class InventoryManager : MonoBehaviour
                 }
             }
         }
-        /*for (int i = 0; i < ShopManager.instance.slots.Count; i++)
-        {
-            Transform slot = ShopManager.instance.slots[i].transform;
 
-            // 슬롯이 비어있지 않다면 삭제
-            if (slot.childCount > 0)
-            {
-                Destroy(slot.GetChild(0).gameObject);
-            }
-        }
-
-        // 인벤토리 아이템 복원
-        for (int i = 0; i < playerInventory.playerItems.Count; i++)
-        {
-            ShopItem item = playerInventory.playerItems[i];
-            if (item != null && item.id != -1)
-            {
-                GameObject itemUI = GameObject.Instantiate(ShopManager.instance.inventoryItemPrefab, ShopManager.instance.slots[i].transform);
-                itemUI.name = item.itemName;
-
-                Image icon = itemUI.GetComponent<Image>();
-                if (icon != null) icon.sprite = item.itemIcon;
-
-                DragItem dragItem = itemUI.GetComponent<DragItem>();
-                if (dragItem != null)
-                {
-                    dragItem.item = item;
-                    dragItem.slot = i;
-                }
-
-                InventoryItemUI uiScript = itemUI.GetComponent<InventoryItemUI>();
-                if (uiScript != null)
-                {
-                    uiScript.itemData = item;
-                }
-            }
-        }
-
-        // 장착 아이템 복원
-        for (int i = 0; i < playerInventory.currentPlayerItems.Count; i++)
-        {
-            ShopItem item = playerInventory.currentPlayerItems[i];
-            if (item != null && item.id != -1)
-            {
-                // 장비 슬롯 index 찾기
-                int slotIndex = ShopManager.instance.GetEquipSlotIndex(item.equipType, i);
-                if (slotIndex == -1) continue;
-
-                GameObject itemUI = GameObject.Instantiate(ShopManager.instance.inventoryItemPrefab, ShopManager.instance.slots[slotIndex].transform);
-                itemUI.name = item.itemName;
-
-                Image icon = itemUI.GetComponent<Image>();
-                if (icon != null) icon.sprite = item.itemIcon;
-
-                DragItem dragItem = itemUI.GetComponent<DragItem>();
-                if (dragItem != null)
-                {
-                    dragItem.item = item;
-                    dragItem.slot = slotIndex;
-                }
-
-                InventoryItemUI uiScript = itemUI.GetComponent<InventoryItemUI>();
-                if (uiScript != null)
-                {
-                    uiScript.itemData = item;
-                }
-            }
-        }*/
+        //
+        FindObjectOfType<StatUIHandler>()?.UpdateStatUI();
+        //
+        
     }
 
 

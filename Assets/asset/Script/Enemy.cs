@@ -24,10 +24,8 @@ public class Enemy : MonoBehaviour, IPointerEnterHandler
     public int blind = 0;
     public int holy = 0;
 
-    private GameObject player;
-
     public BuffUIHandler buffUI;
-    public UnityEngine.UI.Slider HPslider;
+    public Slider HPslider;
 
     void Start()
     {
@@ -45,12 +43,15 @@ public class Enemy : MonoBehaviour, IPointerEnterHandler
         Accuracy = parts[2];
         DefaultDamage = SM * parts[3];
         FinalDamage = DefaultDamage;
-
         Evasion = parts[4];
 
         Debug.Log($"[스탯] 체력: {Health}, 공격속도: {AttackSpeed}, 공격력: {DefaultDamage}, 명중률: {Accuracy}, 회피율: {Evasion}");
 
-        player = GameObject.FindWithTag("Player");
+        //  TurnManager에 자동 등록
+        if (TurnManager.Instance != null && !TurnManager.Instance.enemies.Contains(this))
+        {
+            TurnManager.Instance.enemies.Add(this);
+        }
     }
 
     void Update()
@@ -61,28 +62,42 @@ public class Enemy : MonoBehaviour, IPointerEnterHandler
         }
     }
 
-    public void AttackPlayer(BulletType type)
+    public void AttackPlayer(GameObject target, BulletType type)
     {
-        if (player != null)
+        Debug.Log($"[Enemy 공격 시작] {name} → {target?.name}");
+
+        if (target == null || IsDead)
         {
-            float minDamage = FinalDamage * 0.67f;
-            float maxDamage = FinalDamage * 1.33f;
-            float actualDamage = Random.Range(minDamage, maxDamage);
+            Debug.LogWarning("[Enemy 공격 취소] 타겟이 null이거나 이미 사망");
+            return;
+        }
 
-            Debug.Log($"적이 {actualDamage:F2} 만큼 플레이어를 공격! (타입: {type})");
+        int finalAccuracy = Mathf.Clamp(Accuracy - blind, 0, 100);
+        int hitChance = Random.Range(1, 101);
 
-            PlayerState playerState = player.GetComponent<PlayerState>();
-            if (playerState != null)
+        if (hitChance > finalAccuracy)
+        {
+            Debug.Log($"[Miss] 공격이 빗나감! (최종 명중률: {finalAccuracy}%, 실명 계수: {blind})");
+            return;
+        }
+
+        float minDamage = FinalDamage * 0.67f;
+        float maxDamage = FinalDamage * 1.33f;
+        float actualDamage = Random.Range(minDamage, maxDamage);
+
+        Debug.Log($"적이 {actualDamage:F2} 만큼 플레이어를 공격! (타입: {type})");
+
+        PlayerState playerState = target.GetComponent<PlayerState>();
+        if (playerState != null)
+        {
+            playerState.TakeDamage(actualDamage);
+
+            switch (type)
             {
-                playerState.TakeDamage(actualDamage);
-
-                switch (type)
-                {
-                    case BulletType.Burn: playerState.ApplyDebuff("burn", 1); break;
-                    case BulletType.Bleeding: playerState.ApplyDebuff("bleeding", 1); break;
-                    case BulletType.Curse: playerState.ApplyDebuff("curse", 1); break;
-                    case BulletType.Blind: playerState.ApplyDebuff("blind", 1); break;
-                }
+                case BulletType.Burn: playerState.ApplyDebuff("burn", 1); break;
+                case BulletType.Bleeding: playerState.ApplyDebuff("bleeding", 1); break;
+                case BulletType.Curse: playerState.ApplyDebuff("curse", 1); break;
+                case BulletType.Blind: playerState.ApplyDebuff("blind", 1); break;
             }
         }
     }
@@ -164,23 +179,25 @@ public class Enemy : MonoBehaviour, IPointerEnterHandler
         if (IsDead) return;
 
         IsDead = true;
-        Debug.Log("보스 사망!");
+        Debug.Log("적 사망!");
 
         TurnManager.Instance?.GameOver();
         Destroy(gameObject);
     }
+
     public void OnPointerEnter(PointerEventData eventData)
     {
         Text nameText = GameObject.Find("NameTxt")?.GetComponent<Text>();
         Text infoText = GameObject.Find("infoText")?.GetComponent<Text>();
-        nameText.text = "적";
-        infoText.text = "적의 스텟정보 들어갈 장소";
+        if (nameText != null) nameText.text = "적";
+        if (infoText != null) infoText.text = "적의 스탯정보 들어갈 장소";
     }
+
     public int[] SplitPowerWithRange(int totalPower)
     {
         int[] parts = new int[5];
 
-        parts[1] = Random.Range(50, 71);
+        parts[1] = Random.Range(50, 71); // 공격속도
         int remaining = totalPower - parts[1];
 
         for (int i = 0; i < 5; i++)
@@ -198,7 +215,12 @@ public class Enemy : MonoBehaviour, IPointerEnterHandler
                     minAllowed = Mathf.Min(100, maxAllowed);
                 }
 
-                if (i == 2) maxAllowed = Mathf.Min(100, remaining);
+                if (i == 2)
+                {
+                    maxAllowed = Mathf.Min(100, remaining);
+                    minAllowed = Mathf.Min(60, maxAllowed); //  명중률 최소 60%
+                }
+
                 if (i == 3)
                 {
                     maxAllowed = Mathf.Min(50, remaining);
@@ -216,4 +238,5 @@ public class Enemy : MonoBehaviour, IPointerEnterHandler
 
         return parts;
     }
+
 }

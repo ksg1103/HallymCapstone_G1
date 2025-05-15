@@ -16,7 +16,8 @@ public class ShopItem
     public int burn = 0;
     public int blind = 0;
     public int holy = 0;
-    public int bang = 0;        // 公扁 包访
+    public int bang = 0;        // 公扁 包访.
+    public int bullet = 0;
 
 
 

@@ -291,6 +291,8 @@ MonoBehaviour:
     burn: 0
     blind: 0
     holy: 0
+    bang: 0
+    count: 1
   amount: 0
   slot: 0
 --- !u!114 &904700363723891040
@@ -318,3 +320,5 @@ MonoBehaviour:
     burn: 0
     blind: 0
     holy: 0
+    bang: 0
+    count: 1

@@ -36,13 +36,18 @@ public class ChoiceManager : MonoBehaviour
     public void buttonleft()
     {
         if (isTest == true)
-        { SceneManager.LoadScene("Finalboss"); }
+        {
+            SoundManager.Instance.PlayChoiceSound();
+            Debug.Log("choice");
+            SceneManager.LoadScene("Finalboss"); 
+        }
         else
         {
             int stage = GameManager.instance.StageLevel;
 
             if (stage == 3 || stage == 6 || stage == 9)
             {
+               
                 SceneManager.LoadScene("Finalboss");
             }
             else

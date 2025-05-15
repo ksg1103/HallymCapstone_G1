@@ -880,6 +880,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6a4ba9811d3205f4d905b1954eaabf15, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  isTest: 1
   apoint: 0
   bpoint: 0
   uiA: {fileID: 852352372}

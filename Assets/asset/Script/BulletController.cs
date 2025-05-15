@@ -87,6 +87,11 @@ public class BulletController : MonoBehaviour
             int count = entry.Value;
             GameObject target = targetByType[type];
 
+
+            //
+            Debug.Log($"[µî·Ï ½Ãµµ] {type} ÃÑ¾Ë {count}°³, Å¸°Ù: {target.name}");
+            //
+
             TurnManager.Instance.SubmitGroupedPlayerAction(target, type, count);
         }
     }

@@ -17,6 +17,7 @@ public class Slot : MonoBehaviour, IDropHandler
     
     public void OnDrop(PointerEventData eventData)
     {
+        Debug.Log($"[OnDrop] 호출됨 - 슬롯 ID: {id}, 태그: {this.tag}");
         if (eventData.pointerDrag == null)
         {
             Debug.LogWarning("OnDrop: pointerDrag가 null입니다.");
@@ -37,7 +38,18 @@ public class Slot : MonoBehaviour, IDropHandler
                 droppedItem.ResetToOriginalSlot(); //  복귀 처리 (DragItem.cs에 추가해야 함)
                 return;
             }
+            if (droppedItem.item.id == 18)
+            {
+                Debug.Log("머스킷 장착됨");
+                if (!InventoryManager.InventoryInstance.hasBandollerEquipped)
+                {
+                    Debug.Log("밴돌리어 없음");
+                    droppedItem.ResetToOriginalSlot();
+                    return;
+                }
+            }
         }
+        Debug.Log($"[OnDrop] inv.items[{id}].id = {inv.items[id].id}");
         if (inv.items[id].id == -1)
         {
             Debug.Log("OnDrop메서드"); //slot.cs 가 있는 오브젝트에만 이 메서드가 반응 한다..?
@@ -50,7 +62,9 @@ public class Slot : MonoBehaviour, IDropHandler
             droppedItem.slot = id; //slot 마다 아이디가 있고 그 슬롯의 아이디를 넣게 되는 방식인거 같다.
             
             if (this.tag.Contains("Equip"))
-            {   
+            {
+                SoundManager.Instance.PlayEquipSound();
+
                 InventoryManager.InventoryInstance.EquipItem(droppedItem.item);
                 //Debug.Log($"{droppedItem.item.itemName}이 장비창 아이템의 이름");
                 //InventoryManager.InventoryInstance.UnequipItem(droppedItem.item);
@@ -66,11 +80,35 @@ public class Slot : MonoBehaviour, IDropHandler
         {
             if (this.transform.childCount > 0)
             {
+                
                 Transform targetItemTransform = this.transform.GetChild(0);
                 DragItem targetItem = targetItemTransform.GetComponent<DragItem>();
 
                 int fromSlot = droppedItem.slot; // 드래그하던 아이템의 원래 슬롯
                 int toSlot = id; // 현재 드롭된 슬롯
+
+                bool fromIsEquip = inv.slots[fromSlot].tag.Contains("Equip");
+                bool toIsEquip = this.tag.Contains("Equip");
+
+                if (fromIsEquip || toIsEquip)
+                {
+                    EquipType toSlotType = GetSlotEquipTypeFromTag(this.tag);
+                    EquipType fromSlotType = GetSlotEquipTypeFromTag(inv.slots[fromSlot].tag);
+
+                    if (toIsEquip && droppedItem.item.equipType != toSlotType)
+                    {
+                        Debug.LogWarning($"[Slot] 교체 불가 - {droppedItem.item.equipType}는 {toSlotType} 슬롯에 장착 불가.");
+                        droppedItem.ResetToOriginalSlot();
+                        return;
+                    }
+                    if (fromIsEquip && targetItem.item.equipType != fromSlotType)
+                    {
+                        Debug.LogWarning($"[Slot] 교체 불가 - {targetItem.item.equipType}는 {fromSlotType} 슬롯에 장착 불가.");
+                        droppedItem.ResetToOriginalSlot();
+                        return;
+                    }
+                }
+                SoundManager.Instance.PlayEquipSound();
 
                 // 1. 슬롯 정보 바꾸기
                 droppedItem.slot = toSlot;
@@ -81,6 +119,7 @@ public class Slot : MonoBehaviour, IDropHandler
                 inv.items[toSlot] = inv.items[fromSlot];
                 inv.items[fromSlot] = tempItem;
 
+               
                 // 3. 위치 재배치
                 targetItemTransform.SetParent(inv.slots[fromSlot].transform);
                 targetItemTransform.position = inv.slots[fromSlot].transform.position;
@@ -88,27 +127,7 @@ public class Slot : MonoBehaviour, IDropHandler
                 droppedItem.transform.SetParent(this.transform);
                 droppedItem.transform.position = this.transform.position;
             }
-        }/*
-        else
-        {
-            if (this.transform.childCount > 0)
-            {
-
-
-                Transform item = this.transform.GetChild(0);
-                item.GetComponent<DragItem>().slot = droppedItem.slot;
-                item.transform.SetParent(inv.slots[droppedItem.slot].transform);
-                item.transform.position = inv.slots[droppedItem.slot].transform.position;
-
-                droppedItem.slot = id;
-                droppedItem.transform.SetParent(this.transform);
-                droppedItem.transform.position = this.transform.position;
-
-                inv.items[droppedItem.slot] = item.GetComponent<DragItem>().item;
-                inv.items[id] = droppedItem.item;
-
-            }
-        }*/
+        }
     }
     private EquipType GetSlotEquipTypeFromTag(string tag) // 이 메서드가 장착
     {

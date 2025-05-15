@@ -6,7 +6,7 @@ using UnityEngine.SceneManagement;
 
 public class ShopManager : MonoBehaviour
 {
-    public bool isTest= GameManager.instance.isTest; 
+    public bool isTest= GameManager.instance.isTest;
     
     public List<ShopItem> allItems;
     public Transform itemParent; // 아이템 UI가 생성될 부모 객체
@@ -23,6 +23,7 @@ public class ShopManager : MonoBehaviour
     //
     public Text playerMoneyText;        //플레이어 골드 ui
     //
+    
 
     //
     public Button reloadButton; // 새로고침 버튼 추가
@@ -32,6 +33,7 @@ public class ShopManager : MonoBehaviour
     public GameObject purchaseMessagePanel;     // 구매 성공 메시지 팝업
     //
     //
+     
     [Header("인벤 가득찼을때 팝업 프리팹")]
     public GameObject ItemFullPopUp;
     public Transform popupParent; //팝업 나올 위치
@@ -44,7 +46,9 @@ public class ShopManager : MonoBehaviour
     [Header("슬롯 설정")]
     public GameObject slotPrefab;   // 슬롯 프리팹
     public int slotCount;      // 몇 개 생성할지
-    GameObject inventoryPanel;
+    [Header("인벤토리 패널")]
+    public GameObject inventoryPanel; 
+
     GameObject slotPanel;
     [Header("장비 설정")]
     public GameObject HeadEqip;
@@ -119,6 +123,7 @@ public class ShopManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
+        
         // 상점 중복 구매 관련
         if (GameManager.instance.globalItemList == null || GameManager.instance.globalItemList.Count == 0)
         {
@@ -134,7 +139,7 @@ public class ShopManager : MonoBehaviour
         //
         UpdatePlayerMoneyUI();      // 골드 ui업데이트
         //
-        inventoryPanel = GameObject.Find("InventoryUI");
+        //inventoryPanel = GameObject.Find("InventoryUI");
         Debug.Log(inventoryPanel);
         slotPanel = inventoryPanel.transform.Find("Right Inventory/Scroll View/Viewport/SlotContent").gameObject; //slotpanel은 동적으로 할당
         CreateSlots();
@@ -362,6 +367,7 @@ public class ShopManager : MonoBehaviour
                 // 아이템 구매 로직
                 if (CanAffordItem(item.price))
                 {
+                    SoundManager.Instance.PlayBuySound();
                     //playerMoney -= item.price;
                     //
                     GameManager.instance.playerMoney -= item.price;
@@ -439,7 +445,7 @@ public class ShopManager : MonoBehaviour
                     if (slots[i].transform.childCount == 0)
                     {
                     GameObject itemUI = Instantiate(inventoryItemPrefab, slots[i].transform, false); //itemUI는 inventoryprefab을 인스턴스 시킨것이다.
-
+                    //ShopItemUI shopItemUI = itemUI.GetComponent<ShopItemUI>();
                     /*Image icon = itemUI.GetComponent<Image>();
                     if (icon != null)
                     {
@@ -514,6 +520,7 @@ public class ShopManager : MonoBehaviour
         //GenerateShopItems(); // 상점 아이템 다시 생성
         if (GameManager.instance.playerMoney >= refreshCost)
         {
+            SoundManager.Instance.PlayRefreshSound();
             // 돈 차감
             GameManager.instance.playerMoney -= refreshCost;
             UpdatePlayerMoneyUI();
@@ -581,6 +588,7 @@ public class ShopManager : MonoBehaviour
 
     }
     }
+    
 
     public int GetEquipSlotIndex(EquipType type, int accessoryOrder = 0)
     {
@@ -596,7 +604,7 @@ public class ShopManager : MonoBehaviour
             case EquipType.Shoes: return baseIndex + 5;
             case EquipType.Accessory: return baseIndex + 6 + accessoryOrder; // 액세서리는 4개
             // case 스페셜 추가해야함
-            case EquipType.Special: return baseIndex + 7;
+            case EquipType.Special: return baseIndex + 9;
             default: return -1;
         }
     }

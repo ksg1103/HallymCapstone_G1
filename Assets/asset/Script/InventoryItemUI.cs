@@ -45,8 +45,10 @@ public class InventoryItemUI : MonoBehaviour, IPointerEnterHandler, IPointerExit
 
     public void OnPointerEnter(PointerEventData eventData)
     {
+        if (itemData == null) return;
         tooltipPanel.SetActive(true);
         tooltipName.text = $"{itemData.itemName}";
+        tooltipText.text = GetItemDescription();
         tooltipAttackAt.text = $"Bleeding: {itemData.bleeding}   Curse: {itemData.curse}   Burn: {itemData.burn}\n" +
                                $"Blind: {itemData.blind}   Holy: {itemData.holy}";
         tooltipImage.sprite = itemData.itemIcon;
@@ -55,7 +57,33 @@ public class InventoryItemUI : MonoBehaviour, IPointerEnterHandler, IPointerExit
         HighlightEquipPart(itemData.equipType);
         UpdateTooltipPosition(eventData);
     }
+    private string GetItemDescription()
+    {
+        switch (itemData.itemName)
+        {
+            case "역병의사 마스크":
+                return "흑사병이 돌던 시절, 사람들을 살리려 노력하던 사람들의 흔적입니다.";
+            case "역병의사 신발":
+                return "흑사병이 돌던 시절, 사람들을 살리려 노력하던 사람들의 흔적입니다.";
+            case "역병의사 의상":
+                return "흑사병이 돌던 시절, 사람들을 살리려 노력하던 사람들의 흔적입니다.";
+            case "역병의사 장갑":
+                return "흑사병이 돌던 시절, 사람들을 살리려 노력하던 사람들의 흔적입니다.";
+            case "역병의사 벨트":
+                return "흑사병이 돌던 시절, 사람들을 살리려 노력하던 사람들의 흔적입니다.";
+            case "홀스터":
+                return "권총을 집어넣을수 있는 홀스터 입니다.";
+            case "벤돌리어":
+                return "이름 없는 병사의 탄주머니입니다.";
+            case "Dear Boss":
+                return "전설적인 살인마, 잭 더 리퍼가 사회에 자신을 소개하던 편지입니다.";
+            case "From Hell":
+                return "전설적인 살인마, 잭더 리퍼가 사회에 보내는 2번째 편지입니다.";
 
+            default:
+                return "이 아이템에 대한 설명이 없습니다.";
+        }
+    }
     public void OnPointerExit(PointerEventData eventData)
     {
         tooltipPanel.SetActive(false);

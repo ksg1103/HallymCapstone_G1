@@ -1,0 +1,30 @@
+fileFormatVersion: 2
+guid: 60ce2cd44c8274b8b8fda5cf0a48162a
+AudioImporter:
+  externalObjects: {}
+  serializedVersion: 7
+  defaultSettings:
+    serializedVersion: 2
+    loadType: 0
+    sampleRateSetting: 0
+    sampleRateOverride: 44100
+    compressionFormat: 1
+    quality: 1
+    conversionMode: 0
+    preloadAudioData: 0
+  platformSettingOverrides: {}
+  forceToMono: 0
+  normalize: 1
+  loadInBackground: 0
+  ambisonic: 0
+  3D: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 293201
+  packageName: RPG Shop Sounds - Interface SFX
+  packageVersion: 1.0
+  assetPath: Assets/RPG_Shop_Sounds/Undefined_Material_01.wav
+  uploadId: 711351

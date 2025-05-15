@@ -69,7 +69,7 @@ public class TurnManager : MonoBehaviour
             case TurnState.PlayerTurn:
                 CurrentPhase = TurnPhase.Preparation;
 
-                bulletController.SpawnBullets(2);
+                bulletController.SpawnBullets(player.bullet);
                 bulletController.SetBulletButtonsInteractable(true);
 
                 executeButton.SetActive(true);
@@ -81,7 +81,6 @@ public class TurnManager : MonoBehaviour
                 bulletController.SetBulletButtonsInteractable(false);
 
                 CurrentPhase = TurnPhase.Execution;
-
                 yield return StartCoroutine(ExecuteActions());
 
                 CurrentTurn = TurnState.EnemyTurn;
@@ -89,6 +88,21 @@ public class TurnManager : MonoBehaviour
 
             case TurnState.EnemyTurn:
                 CurrentPhase = TurnPhase.Preparation;
+
+                //  적과 보스의 디버프 처리 (턴 시작 시)
+                foreach (Enemy enemy in enemies)
+                {
+                    if (enemy != null && !enemy.IsDead)
+                    {
+                        enemy.ProcessDebuffsPerTurn();
+                    }
+                }
+
+                FinalBoss boss = FindObjectOfType<FinalBoss>();
+                if (boss != null && !boss.IsDead)
+                {
+                    boss.ProcessDebuffsPerTurn();
+                }
 
                 yield return StartCoroutine(EnemyActions());
 
@@ -119,14 +133,12 @@ public class TurnManager : MonoBehaviour
         }
     }
 
-    // 기존 단일 공격 등록 (적이 공격할 때 사용)
     public void SubmitPlayerAction(GameObject target, BulletType type)
     {
         var action = new ActionData(player.gameObject, target, player.AttackSpeed, type);
         actionQueue.Add(action);
     }
 
-    // 새로운 누적 공격 등록
     public void SubmitGroupedPlayerAction(GameObject target, BulletType type, int count)
     {
         var action = new GroupedActionData(player.gameObject, target, player.AttackSpeed, type, count);
@@ -170,9 +182,18 @@ public class TurnManager : MonoBehaviour
             if (action.caster == null || action.target == null)
                 continue;
 
-            yield return new WaitForSeconds(0.3f);
-            action.Execute();
+            if (action is GroupedActionData groupedAction)
+            {
+                groupedAction.Execute();
+                yield return new WaitForSeconds(1f);
+            }
+            else
+            {
+                action.Execute();
+                yield return new WaitForSeconds(1f);
+            }
 
+            //  실행 후 디버프 처리
             if (action.caster.TryGetComponent<PlayerState>(out var ps))
             {
                 ps.ProcessDebuffsPerTurn();
@@ -212,6 +233,8 @@ public class TurnManager : MonoBehaviour
 
     public void GameOver()
     {
+        if (CurrentTurn == TurnState.GameOver) return;
+
         CurrentTurn = TurnState.GameOver;
         Debug.Log("게임 종료 - 상점 씬으로 이동");
         SceneManager.LoadScene("Store");
@@ -243,7 +266,7 @@ public class TurnManager : MonoBehaviour
             }
             else if (caster.TryGetComponent<Enemy>(out var enemy))
             {
-                enemy.AttackPlayer(bulletType);
+                enemy.AttackPlayer(target, bulletType);
             }
             else if (caster.TryGetComponent<FinalBoss>(out var boss))
             {
@@ -267,6 +290,8 @@ public class TurnManager : MonoBehaviour
 
         public override void Execute()
         {
+            Debug.Log($"[GroupedActionData] Execute 호출됨: {bulletType} x{count}");
+
             if (caster.TryGetComponent<PlayerState>(out var player))
             {
                 player.AttackGrouped(target, bulletType, count);

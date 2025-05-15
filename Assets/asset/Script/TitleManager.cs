@@ -18,16 +18,20 @@ public class TitleManager : MonoBehaviour
     public void StartGame()
     {
         Debug.Log("게임 시작 버튼 클릭됨!"); // 테스트용 로그
+        SoundManager.Instance.PlayGameStartSound();
+
         SceneManager.LoadScene("Store");
     }
 
     public void QuitGame()
     {
         Debug.Log("게임 종료 버튼 클릭됨!"); // 테스트용 로그
+        SoundManager.Instance.PlayGameQuitSound();
+
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
 #else
-    Application.Quit();
+        Application.Quit();
 #endif
     }
 }

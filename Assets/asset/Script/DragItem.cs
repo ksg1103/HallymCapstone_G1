@@ -52,7 +52,7 @@ public class DragItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDrag
         GetComponent<CanvasGroup>().blocksRaycasts = true;
     }
     public void OnPointerClick(PointerEventData eventData)
-    {
+    {   
         // 마우스 오른쪽 클릭 감지
         if (eventData.button == PointerEventData.InputButton.Right)
         {
