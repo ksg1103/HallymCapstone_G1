@@ -45,6 +45,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5996cb5026ac444db60de7c528a685e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  bgmSource: {fileID: 4248287886207582414}
+  bgmClips:
+  - {fileID: 8300000, guid: 628725f71422b5d448c62a72110063cd, type: 3}
+  - {fileID: 8300000, guid: 593cbf84866ecae40906c318a92656fd, type: 3}
+  - {fileID: 8300000, guid: cbb0544ac81f5284b8f8b7616ff4ca35, type: 3}
+  - {fileID: 8300000, guid: ecaf634208475494ebaa59aa70df4941, type: 3}
 --- !u!82 &4248287886207582414
 AudioSource:
   m_ObjectHideFlags: 0
@@ -57,10 +63,10 @@ AudioSource:
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
-  m_PlayOnAwake: 1
-  m_Volume: 1
+  m_PlayOnAwake: 0
+  m_Volume: 0.3
   m_Pitch: 1
-  Loop: 0
+  Loop: 1
   Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0

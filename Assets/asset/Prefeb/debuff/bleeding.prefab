@@ -127,6 +127,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   iconImage: {fileID: 5319319080319730143}
   countText: {fileID: 3128740197333267030}
+  buffType: 1
 --- !u!1 &8380048997388289827
 GameObject:
   m_ObjectHideFlags: 0

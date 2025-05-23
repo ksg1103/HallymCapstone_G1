@@ -44,3 +44,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 35a2ad426f0bb8d4185ec157400f8372, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  isGameover: 0
+  StageLevel: 0
+  EnemyState: 0
+  playerMoney: 100000000
+  saveSlotCount: 10
+  isTest: 1
+  globalItemList: []

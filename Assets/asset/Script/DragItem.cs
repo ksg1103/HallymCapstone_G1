@@ -72,6 +72,16 @@ public class DragItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDrag
         transform.position = originalPosition;
         GetComponent<CanvasGroup>().blocksRaycasts = true;
     }
+    public void AdjustItemSizeForEquipSlot(Transform parent)
+    {
+        transform.SetParent(parent);
 
+        RectTransform rect = GetComponent<RectTransform>();
+        //rect.localScale = Vector3.one; // 혹은 원하는 크기
+        rect.sizeDelta = new Vector2(34, 34); // 원하는 크기 (예: 100x100)
+
+        // 위치 초기화 (선택사항)
+        //rect.anchoredPosition = Vector2.zero;
+    }
 
 }

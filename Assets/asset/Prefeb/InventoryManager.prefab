@@ -45,7 +45,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 272cc4cd4a6dac341b82c126088c95dc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerInventory: {fileID: 0}
+  playerInventory: {fileID: 5770588308807411541}
+  PopupForSellPrefab: {fileID: 8350897669928007327, guid: c3891ebe2493eb34e9e2827873e37cc5, type: 3}
+  itemManyLimit: 0
+  howMany: 0
+  ItemFull: 0
+  hasHolsterEquipped: 0
+  hasBandollerEquipped: 0
+  statSummaryText: {fileID: 0}
 --- !u!114 &5770588308807411541
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -59,3 +66,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerItems: []
+  currentPlayerItems: []

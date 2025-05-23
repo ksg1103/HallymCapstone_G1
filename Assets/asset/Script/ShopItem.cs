@@ -8,7 +8,10 @@ public class ShopItem
 
     public int id;
     public string itemName;  // 아이템 이름
-    public Sprite itemIcon;  // 아이템 아이콘
+
+    public Sprite itemIcon;
+
+  
     public int price;        // 아이템 가격
     public int HP = 0;
     public int bleeding = 0;
